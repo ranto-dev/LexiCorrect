@@ -1,18 +1,21 @@
-# load corups file
-def charger_corpus(file):
-    with open(file, "r", encoding="utf-8") as f:
-        text = f.read().lower()
-    return text
+# ===============================
+# Chargement du corpus
+# ===============================
+
+def charger_corpus(fichier):
+    with open(fichier, "r", encoding="utf-8") as f:
+        texte = f.read().lower()
+    return texte
 
 
-def tokenizer(text):
-    words = ""
+def tokenizer(texte):
+    mots = ""
     tokens = []
-    for c in text:
+    for c in texte:
         if c.isalpha() or c == " ":
-            words += c
-    for word in words.split():
-        tokens.append(word)
+            mots += c
+    for mot in mots.split():
+        tokens.append(mot)
     return tokens
 
 
@@ -23,7 +26,10 @@ def frequences(tokens):
     return freq
 
 
+# ===============================
 # Distance de Levenshtein
+# ===============================
+
 def distance_edition(m1, m2):
     dp = [[0 for _ in range(len(m2) + 1)] for _ in range(len(m1) + 1)]
 
