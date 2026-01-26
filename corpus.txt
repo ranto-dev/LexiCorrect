@@ -1,0 +1,5 @@
+le traitement automatique des langues est un domaine important
+la correction automatique des phrases est utile
+python est un langage puissant
+ce projet utilise un algorithme simple
+nous corrigeons les fautes d orthographe
