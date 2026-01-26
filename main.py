@@ -7,8 +7,7 @@ freq = frequences(tokens)
 vocabulaire = freq.keys()
 
 # Phrase à corriger
-# phrase = "le traitemant automatiqe des langes"
-phrase = "ce projt utilise un modle biramme simple"
+phrase = "le traitemant automatiqe des langes"
 
 print("Phrase originale :", phrase)
 print("Phrase corrigée  :", corriger_phrase(phrase, vocabulaire))
