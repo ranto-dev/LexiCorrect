@@ -1,1 +1,3 @@
 __pycache__
+*.zip
+language_tool_server
