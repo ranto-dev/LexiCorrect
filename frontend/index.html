@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Correcteur Orthographique IA 3D - OFFLINE</title>
+    
+    <!-- Bibliothèques locales -->
+    <script src="./libs/react.production.min.js"></script>
+    <script src="./libs/react-dom.production.min.js"></script>
+    <script src="./libs/babel.min.js"></script>
+    <script src="./libs/three.min.js"></script>
+    <script src="./libs/axios.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            background: #0a0e27;
+            color: white;
+        }
+        
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        #root {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-80px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header h1 {
+            font-size: 4.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            font-weight: 900;
+            letter-spacing: -2px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .header h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                width: 100px;
+                opacity: 1;
+            }
+            50% {
+                width: 150px;
+                opacity: 0.6;
+            }
+        }
+        
+        .header .subtitle {
+            font-size: 1.4rem;
+            color: #a8b2d1;
+            font-weight: 300;
+            margin-top: 20px;
+            animation: fadeIn 2s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 45px;
+            margin-bottom: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-15px) scale(1.01);
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+        
+        .card-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card-title {
+            font-size: 2rem;
+            color: #fff;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 700;
+        }
+        
+        .card-title .icon {
+            font-size: 3rem;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-15px) rotate(5deg);
+            }
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 220px;
+            padding: 28px;
+            font-size: 1.15rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            color: #e6f1ff;
+            resize: vertical;
+            font-family: 'Consolas', 'Monaco', monospace;
+            transition: all 0.4s ease;
+            line-height: 1.8;
+        }
+        
+        textarea:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #667eea;
+            box-shadow: 0 0 40px rgba(102, 126, 234, 0.4);
+            transform: scale(1.01);
+        }
+        
+        textarea::placeholder {
+            color: rgba(230, 241, 255, 0.3);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            margin: 45px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 20px 50px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+            z-index: -1;
+        }
+        
+        button:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-8px) scale(1.08);
+            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.7);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(-4px) scale(1.04);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-8px) scale(1.08);
+            box-shadow: 0 15px 40px rgba(255, 255, 255, 0.2);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .loader-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+        }
+        
+        .loader-rings {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+        
+        .loader-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid transparent;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+        
+        .loader-ring:nth-child(1) {
+            animation-delay: -0.45s;
+            border-top-color: #667eea;
+        }
+        
+        .loader-ring:nth-child(2) {
+            animation-delay: -0.3s;
+            border-top-color: #764ba2;
+        }
+        
+        .loader-ring:nth-child(3) {
+            animation-delay: -0.15s;
+            border-top-color: #f093fb;
+        }
+        
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            50% {
+                transform: rotate(180deg) scale(1.1);
+            }
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
+        }
+        
+        .loader-text {
+            color: #a8b2d1;
+            margin-top: 30px;
+            font-size: 1.2rem;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .results {
+            animation: slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(60px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .error-grid {
+            display: grid;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .error-card {
+            background: rgba(255, 107, 107, 0.12);
+            border-left: 6px solid #ff6b6b;
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            animation: slideInRight 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .error-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+        
+        .error-card:hover::before {
+            left: 100%;
+        }
+        
+        .error-card:hover {
+            transform: translateX(15px) scale(1.02);
+            background: rgba(255, 107, 107, 0.18);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.3);
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .error-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .error-word {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #ff6b6b;
+            text-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+        }
+        
+        .error-category {
+            background: rgba(255, 107, 107, 0.3);
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            color: #ffe66d;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .error-message {
+            color: #a8b2d1;
+            margin: 20px 0;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .suggestions-container {
+            margin-top: 20px;
+        }
+        
+        .suggestions-label {
+            color: #51cf66;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .suggestion-badge {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(81, 207, 102, 0.3);
+        }
+        
+        .suggestion-badge:hover {
+            transform: scale(1.2) rotate(5deg);
+            box-shadow: 0 10px 25px rgba(81, 207, 102, 0.5);
+        }
+        
+        .corrected-section {
+            background: rgba(81, 207, 102, 0.12);
+            border-left: 6px solid #51cf66;
+            padding: 40px;
+            border-radius: 20px;
+            margin-top: 40px;
+            animation: zoomIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .corrected-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(81, 207, 102, 0.1) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+        }
+        
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.85);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .corrected-section h3 {
+            color: #51cf66;
+            font-size: 2.2rem;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 800;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .corrected-text {
+            color: #e6f1ff;
+            font-size: 1.2rem;
+            line-height: 2;
+            font-family: 'Consolas', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            border-radius: 15px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 35px 25px;
+            border-radius: 20px;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
+            transition: left 0.6s;
+        }
+        
+        .stat-card:hover::before {
+            left: 100%;
+        }
+        
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-10px) scale(1.05);
+            border-color: #667eea;
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+        }
+        
+        .stat-value {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #a8b2d1;
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .success-badge {
+            background: rgba(81, 207, 102, 0.2);
+            border: 3px solid #51cf66;
+            padding: 45px;
+            border-radius: 25px;
+            text-align: center;
+            animation: bounceIn 1s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3) rotate(-10deg);
+            }
+            50% {
+                transform: scale(1.1) rotate(5deg);
+            }
+            70% {
+                transform: scale(0.95) rotate(-2deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+        
+        .success-badge h2 {
+            color: #51cf66;
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            font-weight: 900;
+        }
+        
+        .success-badge p {
+            color: #a8b2d1;
+            font-size: 1.4rem;
+            font-weight: 300;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.8rem;
+            }
+            
+            .glass-card {
+                padding: 30px 20px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .stat-value {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="three-canvas"></canvas>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        function ThreeBackground() {
+            const canvasRef = useRef(null);
+            
+            useEffect(() => {
+                const canvas = document.getElementById('three-canvas');
+                if (!canvas || !THREE) return;
+                
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(
+                    75,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    1000
+                );
+                
+                const renderer = new THREE.WebGLRenderer({
+                    canvas: canvas,
+                    alpha: true,
+                    antialias: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                
+                const particlesGeometry = new THREE.BufferGeometry();
+                const particlesCount = 2000;
+                const posArray = new Float32Array(particlesCount * 3);
+                const colorsArray = new Float32Array(particlesCount * 3);
+                
+                for (let i = 0; i < particlesCount * 3; i++) {
+                    posArray[i] = (Math.random() - 0.5) * 150;
+                    colorsArray[i] = Math.random();
+                }
+                
+                particlesGeometry.setAttribute(
+                    'position',
+                    new THREE.BufferAttribute(posArray, 3)
+                );
+                particlesGeometry.setAttribute(
+                    'color',
+                    new THREE.BufferAttribute(colorsArray, 3)
+                );
+                
+                const particlesMaterial = new THREE.PointsMaterial({
+                    size: 0.2,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                const particlesMesh = new THREE.Points(
+                    particlesGeometry,
+                    particlesMaterial
+                );
+                scene.add(particlesMesh);
+                
+                const torusGeometry = new THREE.TorusGeometry(10, 3, 16, 100);
+                const torusMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x667eea,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const torus = new THREE.Mesh(torusGeometry, torusMaterial);
+                scene.add(torus);
+                
+                camera.position.z = 50;
+                
+                let mouseX = 0;
+                let mouseY = 0;
+                
+                document.addEventListener('mousemove', (event) => {
+                    mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+                    mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+                });
+                
+                const clock = new THREE.Clock();
+                let animationId;
+                
+                const animate = () => {
+                    animationId = requestAnimationFrame(animate);
+                    
+                    const elapsed = clock.getElapsedTime();
+                    
+                    particlesMesh.rotation.y = elapsed * 0.05;
+                    particlesMesh.rotation.x = elapsed * 0.03;
+                    
+                    torus.rotation.x = elapsed * 0.3;
+                    torus.rotation.y = elapsed * 0.2;
+                    torus.position.z = Math.sin(elapsed) * 5;
+                    
+                    const positions = particlesMesh.geometry.attributes.position.array;
+                    for (let i = 0; i < positions.length; i += 3) {
+                        positions[i + 1] += Math.sin(elapsed + i) * 0.02;
+                    }
+                    particlesMesh.geometry.attributes.position.needsUpdate = true;
+                    
+                    camera.position.x += (mouseX * 5 - camera.position.x) * 0.05;
+                    camera.position.y += (mouseY * 5 - camera.position.y) * 0.05;
+                    camera.lookAt(scene.position);
+                    
+                    renderer.render(scene, camera);
+                };
+                
+                animate();
+                
+                const handleResize = () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                };
+                
+                window.addEventListener('resize', handleResize);
+                
+                return () => {
+                    cancelAnimationFrame(animationId);
+                    window.removeEventListener('resize', handleResize);
+                    renderer.dispose();
+                };
+            }, []);
+            
+            return null;
+        }
+        
+        function CorrecteurApp() {
+            const [texte, setTexte] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [resultats, setResultats] = useState(null);
+            const [erreur, setErreur] = useState(null);
+            
+            // ⚠️ MODIFIEZ L'URL DE VOTRE API ICI
+            const API_URL = `http://${window.location.hostname}:8000/correct`;
+            
+            const handleCorrection = async () => {
+                if (!texte.trim()) {
+                    alert('⚠️ Veuillez entrer du texte à corriger !');
+                    return;
+                }
+                
+                setLoading(true);
+                setErreur(null);
+                setResultats(null);
+                
+                try {
+                    const response = await axios.post(API_URL, {
+                        texte: texte
+                    });
+                    
+                    setResultats(response.data);
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    setErreur('Impossible de se connecter au serveur. Vérifiez que votre backend FastAPI est démarré.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const handleEffacer = () => {
+                setTexte('');
+                setResultats(null);
+                setErreur(null);
+            };
+            
+            return (
+                <div className="container">
+                    <ThreeBackground />
+                    
+                    <div className="header">
+                        <h1>✨ Correcteur IA 3D</h1>
+                        <p className="subtitle">Propulsé par l'Intelligence Artificielle & Three.js</p>
+                    </div>
+                    
+                    <div className="glass-card">
+                        <div className="card-content">
+                            <div className="card-title">
+                                <span className="icon">📝</span>
+                                <span>Votre texte</span>
+                            </div>
+                            <textarea
+                                value={texte}
+                                onChange={(e) => setTexte(e.target.value)}
+                                placeholder="Entrez votre texte ici pour détecter et corriger les fautes d'orthographe, de grammaire et de ponctuation..."
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="buttons">
+                        <button
+                            className="btn-primary"
+                            onClick={handleCorrection}
+                            disabled={loading}
+                        >
+                            {loading ? '⏳ Analyse...' : '🎯 Corriger'}
+                        </button>
+                        <button
+                            className="btn-secondary"
+                            onClick={handleEffacer}
+                            disabled={loading}
+                        >
+                            🗑️ Effacer
+                        </button>
+                    </div>
+                    
+                    {erreur && (
+                        <div className="glass-card">
+                            <div className="card-content">
+                                <div style={{
+                                    color: '#ff6b6b',
+                                    textAlign: 'center',
+                                    padding: '20px',
+                                    fontSize: '1.2rem'
+                                }}>
+                                    ❌ {erreur}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {loading && (
+                        <div className="glass-card">
+                            <div className="loader-container">
+                                <div className="loader-rings">
+                                    <div className="loader-ring"></div>
+                                    <div className="loader-ring"></div>
+                                    <div className="loader-ring"></div>
+                                </div>
+                                <div className="loader-text">Analyse en cours...</div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {resultats && !loading && (
+                        <div className="results">
+                            {resultats.erreurs && resultats.erreurs.length > 0 ? (
+                                <>
+                                    <div className="glass-card">
+                                        <div className="card-content">
+                                            <div className="card-title">
+                                                <span className="icon">🔍</span>
+                                                <span>Erreurs détectées</span>
+                                            </div>
+                                            <div className="error-grid">
+                                                {resultats.erreurs.map((erreur, index) => (
+                                                    <div key={index} className="error-card">
+                                                        <div className="error-header">
+                                                            <div className="error-word">
+                                                                '{erreur.mot_incorrect}'
+                                                            </div>
+                                                            <div className="error-category">
+                                                                {erreur.categorie}
+                                                            </div>
+                                                        </div>
+                                                        <div className="error-message">
+                                                            {erreur.message}
+                                                        </div>
+                                                        {erreur.suggestions && erreur.suggestions.length > 0 && (
+                                                            <div className="suggestions-container">
+                                                                <span className="suggestions-label">
+                                                                    💡 Suggestions :
+                                                                </span>
+                                                                <div className="suggestions">
+                                                                    {erreur.suggestions.map((sugg, i) => (
+                                                                        <span key={i} className="suggestion-badge">
+                                                                            {sugg}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {resultats.texte_corrige && (
+                                        <div className="glass-card">
+                                            <div className="card-content">
+                                                <div className="corrected-section">
+                                                    <h3>
+                                                        <span>✅</span>
+                                                        <span>Texte corrigé</span>
+                                                    </h3>
+                                                    <div className="corrected-text">
+                                                        {resultats.texte_corrige}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {resultats.statistiques && (
+                                        <div className="glass-card">
+                                            <div className="card-content">
+                                                <div className="card-title">
+                                                    <span className="icon">📊</span>
+                                                    <span>Statistiques</span>
+                                                </div>
+                                                <div className="stats-grid">
+                                                    <div className="stat-card">
+                                                        <div className="stat-value">
+                                                            {resultats.statistiques.nb_mots}
+                                                        </div>
+                                                        <div className="stat-label">Mots analysés</div>
+                                                    </div>
+                                                    <div className="stat-card">
+                                                        <div className="stat-value">
+                                                            {resultats.statistiques.nb_erreurs}
+                                                        </div>
+                                                        <div className="stat-label">Erreurs détectées</div>
+                                                    </div>
+                                                    <div className="stat-card">
+                                                        <div className="stat-value">
+                                                            {resultats.statistiques.taux_erreur}%
+                                                        </div>
+                                                        <div className="stat-label">Taux d'erreur</div>
+                                                    </div>
+                                                    <div className="stat-card">
+                                                        <div className="stat-value">
+                                                            {resultats.statistiques.precision}%
+                                                        </div>
+                                                        <div className="stat-label">Précision</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="glass-card">
+                                    <div className="card-content">
+                                        <div className="success-badge">
+                                            <h2>🎉 Parfait !</h2>
+                                            <p>Aucune erreur détectée dans votre texte.</p>
+                                            <p>Continuez comme ça ! 🏆</p>
+                                        </div>
+                                        
+                                        {resultats.statistiques && (
+                                            <div className="stats-grid" style={{marginTop: '40px'}}>
+                                                <div className="stat-card">
+                                                    <div className="stat-value">
+                                                        {resultats.statistiques.nb_mots}
+                                                    </div>
+                                                    <div className="stat-label">Mots analysés</div>
+                                                </div>
+                                                <div className="stat-card">
+                                                    <div className="stat-value">100%</div>
+                                                    <div className="stat-label">Précision</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<CorrecteurApp />);
+    </script>
+</body>
+</html>
