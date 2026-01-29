@@ -1,8 +1,5 @@
 const { useState } = React;
 
-/* =========================
-   TEXTE CORRIGÉ
-========================= */
 function CorrectedText({ text }) {
   return React.createElement(
     "div",
@@ -12,9 +9,7 @@ function CorrectedText({ text }) {
   );
 }
 
-/* =========================
-   CARTE ERREUR
-========================= */
+
 function ErrorCard({ error }) {
   return React.createElement(
     "div",
@@ -50,9 +45,6 @@ function ErrorCard({ error }) {
   );
 }
 
-/* =========================
-   STATISTIQUES
-========================= */
 function Statistics({ stats }) {
   return React.createElement(
     "div",
@@ -78,9 +70,7 @@ function Statistics({ stats }) {
   );
 }
 
-/* =========================
-   APP PRINCIPALE
-========================= */
+
 function CorrecteurApp() {
   const [texte, setTexte] = useState("");
   const [loading, setLoading] = useState(false);
