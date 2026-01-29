@@ -15,7 +15,8 @@ function CorrecteurApp() {
     try {
       const data = await corrigerTexte(texte);
       setResultats(data);
-    } catch {
+    } catch (err) {
+      console.log(err);
       setErreur("Erreur de connexion au serveur");
     } finally {
       setLoading(false);
@@ -42,13 +43,13 @@ function CorrecteurApp() {
       "div",
       { className: "buttons" },
       React.createElement(Button, {
-        label: loading ? "⏳ Analyse..." : "🎯 Corriger",
+        label: loading ? "⏳ Analyse..." : "🎯 Correct",
         onClick: handleCorrection,
         disabled: loading,
         className: "btn-primary",
       }),
       React.createElement(Button, {
-        label: "🗑️ Effacer",
+        label: "🗑️ Delete",
         onClick: () => setTexte(""),
         disabled: loading,
         className: "btn-secondary",

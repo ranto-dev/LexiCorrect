@@ -9,19 +9,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
+origins = [
+    '*'
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins = origins,
+    allow_credentials= True,
+    allow_methods = ["*"],
+    allow_headers = ["*"]
 )
 
 corrector = FrenchSpellCorrector()
 
 class TextInput(BaseModel):
     text: str
-
 
 @app.post("/correct")
 def correct_text(payload: TextInput):

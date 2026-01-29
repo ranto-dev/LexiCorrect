@@ -2,11 +2,11 @@ function Header() {
   return React.createElement(
     "div",
     { className: "header" },
-    React.createElement("h1", null, "✨ Correcteur IA 3D"),
+    React.createElement("h1", null, "✨ LexiCorrect"),
     React.createElement(
       "p",
       { className: "subtitle" },
-      "Propulsé par l'Intelligence Artificielle & Three.js",
+      "LexiCorrect is a lightweight natural language processing project that automatically corrects French sentences using statistical language models.",
     ),
   );
 }
@@ -15,7 +15,7 @@ function TextArea({ value, onChange }) {
   return React.createElement("textarea", {
     value,
     onChange,
-    placeholder: "Entrez votre texte ici...",
+    placeholder: "Paste or type your text here for correction.",
   });
 }
 
